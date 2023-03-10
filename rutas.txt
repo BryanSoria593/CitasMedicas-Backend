@@ -1,0 +1,27 @@
+[routes]
+; Auth
+POST /acceso=Accesos_Ctrl->validarlogin //Hecho
+POST /newUsuario=Usuarios_Ctrl->registerUser //Hecho
+
+; Consults
+POST /menu=Accesos_Ctrl->fun_accesos //Hecho
+POST /getDoctors = Doctors_Ctrl->getDoctors //Hecho
+GET /getTurnos = Citas_Ctrl->getTurnos //Hecho
+POST /newCite = Citas_Ctrl->newCite //Hecho
+POST /getCites = Citas_Ctrl->getCites //Hecho
+POST /getCitesByPending = Citas_Ctrl->getCitesByPending //Hecho
+POST /getCitesById = Citas_Ctrl->getCitesById //Hecho
+POST /getCitesByDoctor = Citas_Ctrl->getCitesByDoctor //Hecho
+POST /getPendingCitesByDoctor = Citas_Ctrl->getPendingCitesByDoctor //Hecho
+POST /updateCiteById = Citas_Ctrl->updateCiteById
+POST /deleteCiteById = Citas_Ctrl->deleteCiteById //Hecho
+POST /uploadImgaes = Imagenes_Ctrl->uploadImgaes //Hecho
+POST /registerMedicament = Historial_Ctrl->registerMedicament //Hecho
+
+POST /getCitesWithStateAsist = Citas_Ctrl->getCitesWithStateAsist //Hecho
+POST /getHistorialByCite = Historial_Ctrl->getMedicamentoByIdCite //Hecho
+POST /getImageByIdHistorial = Imagenes_Ctrl->getImageByIdHistorial //Hecho
+
+
+
+
