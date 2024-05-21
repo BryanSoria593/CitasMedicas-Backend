@@ -5,7 +5,7 @@ const cors = require('cors')
 
 
 const app = express()
-app.set("port", env.PORT_APP)
+app.set("port", env.PORT_APP || 3000)
 app.use(morgan('dev'))
 app.use(cors())
 
