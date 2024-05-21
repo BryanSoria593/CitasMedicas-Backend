@@ -1,7 +1,8 @@
-const { response } = require('express');
-const { connection } = require('../database/database');
+const { response } = require('express')
+const { connection } = require('../database/database')
+
 const newCite = async (req, res = response) => {
-    const { fecha, id_usuario, id_doctor, id_disponibilidad } = req.body;
+    const { fecha, id_usuario, id_doctor, id_disponibilidad } = req.body
     try {
         const newCite = {
             fecha,
@@ -11,8 +12,9 @@ const newCite = async (req, res = response) => {
             id_disponibilidad
         }
 
-        const query = `INSERT INTO cita SET ?`;
-        const [rows] = await connection.query(query, newCite);
+        const query = `INSERT INTO cita SET ?`
+        const [rows] = await connection.query(query, newCite)
+
         if (!rows) {
             return res.status(400).json({
                 ok: false,
@@ -24,37 +26,44 @@ const newCite = async (req, res = response) => {
             msg: 'Cita registrada correctamente',
         })
 
-    } catch (error) {
+    } catch {
         res.status(401).json({
             ok: false,
-            msg: 'Hubo un error inesperado'
+            msg: 'Hubo un error inesperado, vuelva a intentarlo'
         })
     }
 }
 
 const getCitesByPatient = async (req, res = response) => {
-    const { id_usuario } = req.body;
     try {
+        const { id_usuario, user_rol } = req.body
+        const USU = user_rol === 1 ? 'USU' : 'USU2'
 
         const query = ` 
-        SELECT CI.id_cita, 
-        date_format(CI.fecha, "%d-%m-%Y") as fecha,CI.estado, CI.id_disponibilidad,
-        concat_ws(' ', USU.nombres, USU.apellidos) as doctor ,
-        concat_ws(' ', USU2.nombres, USU2.apellidos) as paciente ,
-        concat_ws(' - ', date_format(TUR.hora_inicio,'%H:%i') , date_format(TUR.hora_final,'%H:%i')) as hora ,
-        ARE.nombre AS area
-        FROM cita CI 
-        INNER JOIN doctor DOC on CI.id_doctor = DOC.id_doctor
-        INNER JOIN area ARE on DOC.id_area = ARE.id_area
-        INNER JOIN usuario USU on DOC.id_usuario = USU.id_usuario
-        INNER JOIN usuario USU2 ON CI.id_usuario = USU2.id_usuario
-        INNER JOIN disponibilidad_cita DIS on CI.id_disponibilidad = DIS.id_disponibilidad
-        INNER JOIN turno TUR on DIS.id_turno = TUR.id_turno
-        where USU2.id_usuario = ?
-        order by ci.id_cita desc
-
+            SELECT
+            CI.id_cita, date_format(CI.fecha, "%d-%m-%Y") AS fecha,CI.estado AS estado,
+            CI.id_disponibilidad AS turno, concat_ws(' ', USU.nombres, USU.apellidos) as doctor ,
+            concat_ws(' ', USU2.nombres, USU2.apellidos) as paciente , concat_ws(' - ', date_format(TUR.hora_inicio,'%H:%i'),
+            date_format(TUR.hora_final,'%H:%i')) as hora, ARE.nombre AS area
+            FROM
+                cita CI
+            INNER JOIN 
+                doctor DOC on CI.id_doctor = DOC.id_doctor
+            INNER JOIN 
+                area ARE on DOC.id_area = ARE.id_area
+            INNER JOIN 
+                usuario USU on DOC.id_usuario = USU.id_usuario
+            INNER JOIN 
+                usuario USU2 ON CI.id_usuario = USU2.id_usuario
+            INNER JOIN 
+                disponibilidad_cita DIS on CI.id_disponibilidad = DIS.id_disponibilidad
+            INNER JOIN 
+                turno TUR on DIS.id_turno = TUR.id_turno
+            where ${USU}.id_usuario = ?
+            order by CI.id_cita desc
         `
-        const [rows] = await connection.query(query, id_usuario);
+        const [rows] = await connection.query(query, [id_usuario])
+
         if (!rows) {
             return res.status(400).json({
                 ok: false,
@@ -62,9 +71,9 @@ const getCitesByPatient = async (req, res = response) => {
             })
         }
         if (rows.length < 1) {
-
             return res.status(200).json({
                 ok: true,
+                citas: [],
                 msg: 'No se encontraron citas'
             })
         }
@@ -73,33 +82,41 @@ const getCitesByPatient = async (req, res = response) => {
             msg: 'Citas obtenidas correctamente',
             citas: rows
         })
-    } catch (error) {
+    } catch {
         res.status(500).json({
             ok: false,
-            msg: 'Hubo un problema inesperado.',
-            error
+            msg: 'Hubo un error inesperado, vuelva a intentarlo'
         })
     }
-
 }
 
 const getCite = async (req, res = response) => {
-    const { id } = req.params;
+    const { id } = req.params
     try {
         const query = `
-            SELECT CI.id_cita, CI.fecha, CI.estado, CI.id_disponibilidad, USU.nombres AS NombreDoc, USU.apellidos AS ApellidoDoc,
-            USU.imagen AS ImagenDoc,USU2.nombres AS NombreUsu, USU2.apellidos ApellidoUsu, USU2.imagen AS ImagenUsu,
-            date_format(TUR.hora_inicio,'%H:%i') as hora_inicio,  date_format(TUR.hora_final,'%H:%i') as hora_final, ARE.nombre AS Area
-            FROM cita CI
-            INNER JOIN doctor DOC on CI.id_doctor = DOC.id_doctor
-            INNER JOIN area ARE on DOC.id_area = ARE.id_area
-            INNER JOIN usuario USU on DOC.id_usuario = USU.id_usuario
-            INNER JOIN usuario USU2 ON CI.id_usuario = USU2.id_usuario
-            INNER JOIN disponibilidad_cita DIS on CI.id_disponibilidad = DIS.id_disponibilidad
-            INNER JOIN turno TUR on DIS.id_turno = TUR.id_turno
+            SELECT
+                CI.id_cita, CI.fecha AS fecha, CI.estado AS estado, CI.id_disponibilidad AS turno, 
+                USU.nombres AS nombreDoc, USU.apellidos AS apellidoDoc,
+                USU2.nombres AS nombreUsu, USU2.apellidos apellidoUsu,
+                date_format(TUR.hora_inicio,'%H:%i') as horaInicial, 
+                date_format(TUR.hora_final,'%H:%i') as horaFinal, ARE.nombre AS area
+            FROM
+                cita CI
+            INNER JOIN 
+                doctor DOC on CI.id_doctor = DOC.id_doctor
+            INNER JOIN 
+                area ARE on DOC.id_area = ARE.id_area
+            INNER JOIN 
+                usuario USU on DOC.id_usuario = USU.id_usuario
+            INNER JOIN 
+                usuario USU2 ON CI.id_usuario = USU2.id_usuario
+            INNER JOIN 
+                disponibilidad_cita DIS on CI.id_disponibilidad = DIS.id_disponibilidad
+            INNER JOIN 
+                turno TUR on DIS.id_turno = TUR.id_turno
             WHERE CI.id_cita = ?
         `
-        const [rows] = await connection.query(query, id);
+        const [rows] = await connection.query(query, id)
         if (!rows) {
             return res.status(400).json({
                 ok: false,
@@ -109,6 +126,7 @@ const getCite = async (req, res = response) => {
         if (rows.length < 1) {
             return res.status(400).json({
                 ok: true,
+                cita: [],
                 msg: 'No se encontraron citas'
             })
         }
@@ -117,28 +135,55 @@ const getCite = async (req, res = response) => {
             msg: 'Cita obtenida correctamente',
             cita: rows
         })
-    } catch (error) {
+    } catch {
         res.status(500).json({
             ok: false,
-            msg: 'Ha ocurrido un error inesperado'
+            msg: 'Hubo un error inesperado, vuelva a intentarlo'
         })
     }
 }
 
 const updateCite = async (req, res = response) => {
-    const { id } = req.params;
+    const { id_cita, fecha, id_disponibilidad } = req.body
+    try {
+        const query = `
+            UPDATE cita SET fecha=?, id_disponibilidad=? WHERE id_cita=?
+        `
+        const [rows] = await connection.query(query, [fecha, id_disponibilidad, id_cita])
+
+        if (!rows) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'No se pudo actualizar la cita'
+            })
+        }
+        if (rows.affectedRows < 1) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'No se existe esa cita'
+            })
+        }
+        return res.json({
+            ok: true,
+            msg: 'Cita actualizada correctamente',
+        })
+    } catch {
+        res.status(500).json({
+            ok: false,
+            msg: error
+        })
+    }
 }
 
 const deleteCite = async (req, res = response) => {
-    const { id } = req.params;
+    const { id } = req.params
 
     try {
         const query = `
-            UPDATE cita CI SET estado = 'Cancelado'
+            UPDATE cita CI SET estado = 'Cancelada'
             WHERE CI.id_cita = ?
-        
-        `;
-        const [rows] = await connection.query(query, id);
+        `
+        const [rows] = await connection.query(query, id)
         if (!rows) {
             return res.status(400).json({
                 ok: false,
@@ -156,34 +201,50 @@ const deleteCite = async (req, res = response) => {
             msg: 'Cita cancelada correctamente'
         })
 
-    } catch (error) {
-
+    } catch {
+        res.status(500).json({
+            ok: false,
+            msg: 'Hubo un error inesperado, vuelva a intentarlo'
+        })
     }
 
 }
 
 const getCitesByPending = async (req, res = response) => {
-    const { id_usuario } = req.body;
-    try {
+    const { id_usuario, user_rol } = req.body
+    const USU = user_rol === 1 ? 'USU' : 'USU2'
 
+    try {
         const query = `
-            SELECT CI.id_cita, 
-            date_format(CI.fecha, "%d-%m-%Y") as fecha,CI.estado, CI.id_disponibilidad,
-            concat_ws(' ', USU.nombres, USU.apellidos) as doctor ,
-            concat_ws(' ', USU2.nombres, USU2.apellidos) as paciente ,
-            concat_ws(' - ', date_format(TUR.hora_inicio,'%H:%i') , date_format(TUR.hora_final,'%H:%i')) as hora ,
-            ARE.nombre AS area
-            FROM cita CI 
-            INNER JOIN doctor DOC on CI.id_doctor = DOC.id_doctor 
-            INNER JOIN area ARE on DOC.id_area = ARE.id_area 
-            INNER JOIN usuario USU on DOC.id_usuario = USU.id_usuario 
-            INNER JOIN usuario USU2 ON CI.id_usuario = USU2.id_usuario 
-            INNER JOIN disponibilidad_cita DIS on CI.id_disponibilidad = DIS.id_disponibilidad 
-            INNER JOIN turno TUR on DIS.id_turno = TUR.id_turno 
-            where USU2.id_usuario = ? AND CI.estado = 'Pendiente'
-            order by ci.id_cita desc
-        `;
-        const [rows] = await connection.query(query, id_usuario);
+            SELECT 
+                CI.id_cita, 
+                date_format(CI.fecha, "%Y-%m-%d") as fecha,CI.estado, CI.id_disponibilidad AS turno,
+                concat_ws(' ', USU.nombres, USU.apellidos) as doctor ,
+                concat_ws(' ', USU2.nombres, USU2.apellidos) as paciente,
+                USU2.cedula as dni,
+                CI.id_usuario,
+                CI.id_doctor,
+                date_format(TUR.hora_inicio,'%H:%i') as hora_inicio,
+                date_format(TUR.hora_final,'%H:%i') as hora_final,
+                ARE.nombre AS area
+            FROM
+                cita CI 
+            INNER JOIN 
+                doctor DOC on CI.id_doctor = DOC.id_doctor 
+            INNER JOIN 
+                area ARE on DOC.id_area = ARE.id_area 
+            INNER JOIN 
+                usuario USU on DOC.id_usuario = USU.id_usuario 
+            INNER JOIN 
+                usuario USU2 ON CI.id_usuario = USU2.id_usuario 
+            INNER JOIN 
+                disponibilidad_cita DIS on CI.id_disponibilidad = DIS.id_disponibilidad 
+            INNER JOIN 
+                turno TUR on DIS.id_turno = TUR.id_turno 
+            where ${USU}.id_usuario = ? AND CI.estado = 'Pendiente'
+            order by CI.id_cita desc
+        `
+        const [rows] = await connection.query(query, id_usuario)
         if (!rows) {
             return res.status(400).json({
                 ok: false,
@@ -193,6 +254,7 @@ const getCitesByPending = async (req, res = response) => {
         if (rows.length < 1) {
             return res.status(200).json({
                 ok: true,
+                citas: [],
                 msg: 'No tiene citas pendientes.'
             })
         }
@@ -201,34 +263,42 @@ const getCitesByPending = async (req, res = response) => {
             citas: rows
         })
 
-    } catch (error) {
+    } catch {
         res.status(500).json({
             ok: false,
-            msg: 'Hubo un error inesperado, escriba al soporte para más información',
-            error
+            msg: 'Hubo un error inesperado, vuelva a intentarlo',
         })
     }
 }
 
 const getAssistedCites = async (req, res = response) => {
-    const { id_usuario } = req.body;
+    const { id_usuario, user_rol } = req.body
+    const USU = user_rol === 1 ? 'USU' : 'USU2'
     try {
-
         const query = `
-            SELECT CI.id_cita, CI.fecha, CI.estado, CI.id_disponibilidad, 
-            USU.nombres AS NombreDoc, USU.apellidos AS ApellidoDoc, USU.imagen AS ImagenDoc,USU2.nombres AS NombreUsu, USU2.apellidos ApellidoUsu, USU2.imagen AS ImagenUsu,date_format(TUR.hora_inicio,'%H:%i') as hora_inicio,  date_format(TUR.hora_final,'%H:%i') as hora_final, ARE.nombre AS Area      
-            FROM cita CI 
-            INNER JOIN doctor DOC on CI.id_doctor = DOC.id_doctor 
-            INNER JOIN area ARE on DOC.id_area = ARE.id_area 
-            INNER JOIN usuario USU on DOC.id_usuario = USU.id_usuario 
-            INNER JOIN usuario USU2 ON ci.id_usuario = usu2.id_usuario 
-            INNER JOIN disponibilidad_cita DIS on CI.id_disponibilidad = DIS.id_disponibilidad 
-            INNER JOIN turno TUR on DIS.id_turno = TUR.id_turno 
-            where USU2.id_usuario = ? and CI.estado = 'Asistido'
-        
+            SELECT 
+                CI.id_cita, date_format(CI.fecha, "%Y-%m-%d") AS fecha,CI.estado AS estado,
+                CI.id_disponibilidad AS turno, concat_ws(' ', USU.nombres, USU.apellidos) as doctor ,
+                concat_ws(' ', USU2.nombres, USU2.apellidos) as paciente, USU2.cedula as dni,
+                CI.id_usuario, CI.id_doctor, date_format(TUR.hora_inicio,'%H:%i') as hora_inicio,
+                date_format(TUR.hora_final,'%H:%i') as hora_final, ARE.nombre AS area
+            FROM 
+                cita CI 
+            INNER JOIN 
+                doctor DOC on CI.id_doctor = DOC.id_doctor 
+            INNER JOIN 
+                area ARE on DOC.id_area = ARE.id_area 
+            INNER JOIN 
+                usuario USU on DOC.id_usuario = USU.id_usuario 
+            INNER JOIN 
+                usuario USU2 ON CI.id_usuario = USU2.id_usuario 
+            INNER JOIN 
+                disponibilidad_cita DIS on CI.id_disponibilidad = DIS.id_disponibilidad 
+            INNER JOIN 
+                turno TUR on DIS.id_turno = TUR.id_turno 
+            where ${USU}.id_usuario = ? AND CI.estado = 'Asistida'
         `
-
-        const [rows] = await connection.query(query, id_usuario);
+        const [rows] = await connection.query(query, id_usuario)
         if (!rows) {
             return res.status(400).json({
                 ok: false,
@@ -238,6 +308,7 @@ const getAssistedCites = async (req, res = response) => {
         if (rows.length < 1) {
             return res.status(400).json({
                 ok: true,
+                citas: [],
                 msg: 'No tiene citas asistidas.'
             })
         }
@@ -245,12 +316,10 @@ const getAssistedCites = async (req, res = response) => {
             ok: true,
             citas: rows
         })
-
-
-    } catch (error) {
+    } catch {
         res.status(500).json({
             ok: false,
-            msg: 'Hubo un error inesperado, escriba al soporte para más información'
+            msg: 'Hubo un error inesperado, vuelva a intentarlo'
         })
     }
 }
@@ -262,4 +331,5 @@ module.exports = {
     deleteCite,
     getCitesByPending,
     getAssistedCites,
+    updateCite
 }
