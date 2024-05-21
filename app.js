@@ -1,14 +1,14 @@
+require('dotenv').config()
+
 const express = require('express')
 const morgan = require("morgan")
 const cors = require('cors')
-
 
 const app = express()
 app.set("port", process.env.PORT_APP)
 app.use(morgan('dev'))
 app.use(cors())
 
-//Lectura y parseo del body
 app.use(express.json())
 
 const authRoutes = require('./routes/auth')

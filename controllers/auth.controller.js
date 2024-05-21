@@ -124,7 +124,9 @@ const sendEmailForResetPassword = async (req, res = response) => {
                 msg: 'Error al generar el token'
             })
         }
+
         sendEmailForResetPass(email, user.nombres, user.apellidos, token)
+
         return res.status(200).json({
             ok: true,
             msg: 'Correo enviado correctamente'
